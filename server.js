@@ -1,17 +1,33 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
+const swaggerUi = require('swagger-ui-express');
 require('dotenv').config();
+
+const connectDB = require('./src/config/db');
+const authRoutes = require('./src/routes/authRoutes');
+const swaggerDocument = require('./src/config/swagger.json');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+// Connect to Database
+connectDB();
+
 // Middleware
 app.use(cors());
+app.use(cookieParser());
 app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Swagger Documentation Route
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// Mount Routes
+app.use('/auth', authRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -56,5 +72,6 @@ app.listen(PORT, () => {
   console.log(`  Server is running in ${NODE_ENV} mode`);
   console.log(`  Listening on port: ${PORT}`);
   console.log(`  Health check: http://localhost:${PORT}/api/health`);
+  console.log(`  API Specs:    http://localhost:${PORT}/api-docs`);
   console.log(`=========================================`);
 });
