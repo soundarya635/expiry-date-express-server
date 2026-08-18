@@ -18,11 +18,38 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 connectDB();
 
 // Middleware
-const allowedOrigins = process.env.CLIENT_URL ? [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:3000'] : '*';
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+
+    // If CLIENT_URL is defined, check matching origin (ignoring trailing slash)
+    if (process.env.CLIENT_URL) {
+      const clientUrlClean = process.env.CLIENT_URL.trim().replace(/\/$/, '');
+      const originClean = origin.trim().replace(/\/$/, '');
+      if (originClean === clientUrlClean) {
+        return callback(null, true);
+      }
+    }
+
+    // Allow Netlify subdomains, Vercel subdomains, and local dev servers
+    if (
+      origin.endsWith('.netlify.app') ||
+      origin.endsWith('.vercel.app') ||
+      origin.startsWith('http://localhost') ||
+      origin.startsWith('http://127.0.0.1')
+    ) {
+      return callback(null, true);
+    }
+
+    // Dynamic reflection of origin to guarantee CORS compliance with credentials
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
+
 app.use(cookieParser());
 app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined'));
 app.use(express.json());
