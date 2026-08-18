@@ -49,6 +49,7 @@ const authController = {
 
             return response.status(200).json({
                 message: 'User authenticated',
+                token: token,
                 user: user
             });
         } catch (error) {

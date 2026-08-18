@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
+const productRoutes = require('./src/routes/productRoutes');
 const swaggerDocument = require('./src/config/swagger.json');
 
 const app = express();
@@ -17,7 +18,11 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 connectDB();
 
 // Middleware
-app.use(cors());
+const allowedOrigins = process.env.CLIENT_URL ? [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:3000'] : '*';
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 app.use(cookieParser());
 app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined'));
 app.use(express.json());
@@ -28,6 +33,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Mount Routes
 app.use('/auth', authRoutes);
+app.use('/products', productRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
